@@ -147,3 +147,36 @@ exports.register = async (req, res) => {
     });
   }
 };
+
+exports.getProfile = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.userId, {
+      attributes: {
+        exclude: ['password', 'refreshToken']
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'Không tìm thấy người dùng.'
+        }
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Không thể lấy thông tin người dùng.'
+      }
+    });
+  }
+};
