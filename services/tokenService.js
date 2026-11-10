@@ -1,4 +1,7 @@
 const jwt = require('jsonwebtoken');
+const verifyRefreshToken = (token) => {
+    return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+}
 
 const generateAccessToken = (user) => {
   return jwt.sign(
@@ -26,7 +29,9 @@ const generateRefreshToken = (user) => {
   );
 };
 
+
 module.exports = {
   generateAccessToken,
-  generateRefreshToken
+  generateRefreshToken,
+  verifyRefreshToken
 };

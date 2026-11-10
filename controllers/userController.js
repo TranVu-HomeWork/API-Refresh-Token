@@ -2,7 +2,8 @@ const User = require('../models/User');
 const { hashPassword, comparePassword } = require('../services/passwordService');
 const {
   generateAccessToken,
-  generateRefreshToken
+  generateRefreshToken,
+  verifyRefreshToken
 } = require('../services/tokenService');
 
 exports.register = async (req, res) => {
@@ -143,6 +144,58 @@ exports.register = async (req, res) => {
       error: {
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Không thể đăng nhập.'
+      }
+    });
+  }
+};
+
+exports.refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'REFRESH_TOKEN_MISSING',
+          message: 'Refresh Token là bắt buộc.'
+        }
+      });
+    }
+
+    const decoded = verifyRefreshToken(refreshToken);
+
+    const user = await User.findByPk(decoded.userId);
+
+    if (!user || user.refreshToken !== refreshToken) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'INVALID_REFRESH_TOKEN',
+          message: 'Refresh Token không hợp lệ hoặc đã bị hủy.'
+        }
+      });
+    }
+
+    const newAccessToken = generateAccessToken(user);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Cấp Access Token mới thành công.',
+      data: {
+        accessToken: newAccessToken
+      }
+    });
+  } catch (error) {
+    const message = error.name === 'TokenExpiredError'
+      ? 'Refresh Token đã hết hạn.'
+      : 'Refresh Token không hợp lệ.';
+
+    return res.status(401).json({
+      success: false,
+      error: {
+        code: 'INVALID_REFRESH_TOKEN',
+        message
       }
     });
   }
